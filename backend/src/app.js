@@ -1,16 +1,28 @@
-
+import express from "express";
+import cors from "cors";
 import mongoose from "mongoose";
+import authRoutes from "./routes/auth.routes.js";
+import classRoutes from "./routes/class.routes.js";
+const app = express();
 
-const connectDB = async () => {
-    const uri = process.env.MONGODB_URI;
+app.use(cors());
+app.use(express.json());
 
-    if (!uri) {
-        throw new Error("MONGODB_URI is missing from .env");
-    }
+app.get("/", (req, res) => {
+    res.json({ message: "Welcome to SmartAttend API" });
+});
 
-    await mongoose.connect(uri);
+app.get("/api/health", (req, res) => {
+    res.status(200).json({
+        status: "ok",
+        database:
+            mongoose.connection.readyState === 1
+                ? "connected"
+                : "disconnected"
+    });
+});
 
-    console.log("MongoDB connected successfully");
-};
-
-export default connectDB;
+app.use("/api/auth", authRoutes);
+app.use("/api/classes", classRoutes);
+app.use("/api/classes", classRoutes);
+export default app; 
