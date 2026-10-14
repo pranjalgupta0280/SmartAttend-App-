@@ -311,14 +311,34 @@ export const SessionsScreen = ({
 
                 {/* Actions */}
                 <View style={styles.sessionActions}>
-                    {!isTeacher && isScheduled ? (
-                        <Button
-                            title={isWindowOpen ? "📸 Check In Now" : "Mark Attendance"}
-                            variant={isWindowOpen ? "primary" : "secondary"}
-                            size="sm"
-                            onPress={() => onNavigateCheckIn(item)}
-                            style={styles.actionBtn}
-                        />
+                    {!isTeacher ? (
+                        item.myAttendance?.status === "PRESENT" ? (
+                            <Button
+                                title="✓ Attendance Marked (PRESENT)"
+                                variant="outline"
+                                size="sm"
+                                disabled={true}
+                                style={[styles.actionBtn, { borderColor: COLORS.success, backgroundColor: COLORS.successLight }]}
+                                textStyle={{ color: COLORS.success, fontWeight: "700" }}
+                            />
+                        ) : item.myAttendance?.status === "ABSENT" ? (
+                            <Button
+                                title="✕ Marked ABSENT"
+                                variant="outline"
+                                size="sm"
+                                disabled={true}
+                                style={[styles.actionBtn, { borderColor: COLORS.danger, backgroundColor: COLORS.dangerLight }]}
+                                textStyle={{ color: COLORS.danger, fontWeight: "700" }}
+                            />
+                        ) : isScheduled ? (
+                            <Button
+                                title={isWindowOpen ? "👍 Thumb Check-In" : "Mark Attendance"}
+                                variant={isWindowOpen ? "primary" : "secondary"}
+                                size="sm"
+                                onPress={() => onNavigateCheckIn(item, fetchSessions)}
+                                style={styles.actionBtn}
+                            />
+                        ) : null
                     ) : null}
 
                     {canManageAttendance ? (
