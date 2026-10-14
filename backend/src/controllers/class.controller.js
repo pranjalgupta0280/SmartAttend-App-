@@ -1,7 +1,7 @@
 
 import Class from "../models/Class.js";
 import ClassMembership from "../models/ClassMembership.js";
-
+import mongoose from "mongoose";
 const teacherPermissions = [
     "MANAGE_CLASS",
     "MANAGE_MEMBERS",
@@ -101,3 +101,81 @@ export const getMyClasses = async (req, res) => {
     }
 };
 
+
+export const updateClassLocation = async (req, res) => {
+    try {
+        const { classId } = req.params;
+        const { latitude, longitude, radiusMeters } = req.body;
+
+        if (!mongoose.isValidObjectId(classId)) {
+            return res.status(400).json({
+                message: "Invalid class ID"
+            });
+        }
+
+        if (
+            typeof latitude !== "number" ||
+            !Number.isFinite(latitude) ||
+            latitude < -90 ||
+            latitude > 90 ||
+            typeof longitude !== "number" ||
+            !Number.isFinite(longitude) ||
+            longitude < -180 ||
+            longitude > 180 ||
+            typeof radiusMeters !== "number" ||
+            !Number.isFinite(radiusMeters) ||
+            radiusMeters < 1 ||
+            radiusMeters > 1000
+        ) {
+            return res.status(400).json({
+                message: "Provide valid coordinates and a radius between 1 and 1000 metres"
+            });
+        }
+
+        const membership = await ClassMembership.findOne({
+            userId: req.user.id,
+            classId,
+            role: "TEACHER",
+            status: "ACTIVE"
+        });
+
+        if (
+            !membership ||
+            !membership.permissions.includes("MANAGE_SCHEDULE")
+        ) {
+            return res.status(403).json({
+                message: "You cannot change this class's location"
+            });
+        }
+
+        const classDoc = await Class.findOne({
+            _id: classId,
+            isActive: true
+        });
+
+        if (!classDoc) {
+            return res.status(404).json({
+                message: "Class not found"
+            });
+        }
+
+        classDoc.location = {
+            latitude,
+            longitude,
+            radiusMeters
+        };
+
+        await classDoc.save();
+
+        return res.status(200).json({
+            message: "Attendance location updated successfully",
+            location: classDoc.location
+        });
+    } catch (error) {
+        console.error("Update location error:", error.message);
+
+        return res.status(500).json({
+            message: "Failed to update attendance location"
+        });
+    }
+};
