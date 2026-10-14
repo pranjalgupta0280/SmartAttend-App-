@@ -8,6 +8,7 @@ import {
     Platform,
     TouchableOpacity,
 } from "react-native";
+import * as LocalAuthentication from "expo-local-authentication";
 import { useAuth } from "../context/AuthContext.js";
 import { Input } from "../components/Input.js";
 import { Button } from "../components/Button.js";
@@ -46,8 +47,36 @@ export const RegisterScreen = ({ onNavigateToLogin }) => {
         }
 
         setLoading(true);
+
+        // Biometric / Thumb Scan Verification during Account Creation
+        let biometricSuccess = false;
         try {
-            await register(name, email, password);
+            const hasHardware = await LocalAuthentication.hasHardwareAsync();
+            const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+            if (hasHardware && isEnrolled) {
+                const bioResult = await LocalAuthentication.authenticateAsync({
+                    promptMessage: "Scan thumb to bind biometric profile",
+                    fallbackLabel: "Use Device PIN",
+                    cancelLabel: "Cancel",
+                });
+
+                if (!bioResult.success) {
+                    setError(
+                        "Thumb scan was not completed. Biometric verification is required."
+                    );
+                    setLoading(false);
+                    return;
+                }
+
+                biometricSuccess = true;
+            }
+        } catch (bioErr) {
+            console.warn("Biometric hardware check:", bioErr.message);
+        }
+
+        try {
+            await register(name, email, password, biometricSuccess);
         } catch (err) {
             setError(err.message || "Failed to register account");
         } finally {
@@ -67,7 +96,7 @@ export const RegisterScreen = ({ onNavigateToLogin }) => {
                 <View style={styles.headerContainer}>
                     <Text style={styles.brandTitle}>Create Account</Text>
                     <Text style={styles.brandSubtitle}>
-                        Join SmartAttend for modern education tracking
+                        Join SmartAttend with Biometric Thumb Verification
                     </Text>
                 </View>
 
@@ -111,8 +140,14 @@ export const RegisterScreen = ({ onNavigateToLogin }) => {
                         secureTextEntry
                     />
 
+                    <View style={styles.biometricInfo}>
+                        <Text style={styles.biometricInfoText}>
+                            👍 You will be prompted to scan your fingerprint/thumb to bind this account.
+                        </Text>
+                    </View>
+
                     <Button
-                        title="Create Account"
+                        title="Scan Thumb & Register"
                         onPress={handleRegister}
                         loading={loading}
                         style={styles.registerBtn}
@@ -181,8 +216,22 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: "500",
     },
+    biometricInfo: {
+        backgroundColor: COLORS.surfaceMuted,
+        borderRadius: RADIUS.md,
+        padding: SPACING.sm + 2,
+        marginBottom: SPACING.md,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+    },
+    biometricInfoText: {
+        fontSize: 12,
+        color: COLORS.textSecondary,
+        textAlign: "center",
+        lineHeight: 16,
+    },
     registerBtn: {
-        marginTop: SPACING.sm,
+        marginTop: SPACING.xs,
     },
     footerRow: {
         flexDirection: "row",
