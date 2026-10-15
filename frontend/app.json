@@ -4,7 +4,7 @@
     "slug": "smartattend",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/smartattend-logo.svg",
+    "icon": "./assets/Verified Location Attendance Icon.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
@@ -15,7 +15,7 @@
       }
     },
     "splash": {
-      "image": "./assets/smartattend-logo.svg",
+      "image": "./assets/Verified Location Attendance Icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#FAF7F4"
     },

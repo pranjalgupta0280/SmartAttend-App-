@@ -150,7 +150,7 @@ export const RegisterScreen = ({ onNavigateToLogin }) => {
 
                     <View style={styles.biometricInfo}>
                         <Text style={styles.biometricInfoText}>
-                            👍 You will be prompted to scan your fingerprint/thumb to bind this account.
+                            You will be prompted to scan your fingerprint/thumb to bind this account.
                         </Text>
                     </View>
 
