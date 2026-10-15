@@ -410,10 +410,9 @@ export const getMyClassAttendance = async (req, res) => {
             });
         }
 
-        // Show sessions that have started, newest first.
+        // Fetch all class sessions (past, present, and scheduled/holidays)
         const sessions = await AttendanceSession.find({
-            classId,
-            startsAt: { $lte: new Date() }
+            classId
         }).sort({ startsAt: -1 });
 
         const records = await AttendanceRecord.find({

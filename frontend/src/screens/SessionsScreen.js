@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
     View,
     Text,
@@ -40,6 +40,23 @@ export const SessionsScreen = ({
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState("");
+    const [activeCategoryFilter, setActiveCategoryFilter] = useState("ALL");
+
+    const getSessionCategory = useCallback((item) => {
+        if (!item) return "UPCOMING";
+        if (item.status === "HOLIDAY" || item.status === "CANCELLED") return "INACTIVE";
+        if (item.status === "COMPLETED") return "COMPLETED";
+        if (item.status === "SCHEDULED") {
+            const now = new Date();
+            const opensAt = new Date(item.attendanceOpensAt);
+            const closesAt = new Date(item.attendanceClosesAt);
+            const endsAt = new Date(item.endsAt);
+            if (now >= opensAt && now <= closesAt) return "LIVE";
+            if (now > endsAt) return "COMPLETED";
+            return "UPCOMING";
+        }
+        return "UPCOMING";
+    }, []);
 
     // Create Session Modal State
     const [createModalVisible, setCreateModalVisible] = useState(false);
@@ -107,6 +124,19 @@ export const SessionsScreen = ({
         setRefreshing(true);
         fetchSessions();
     };
+
+    const { filteredSessions, counts } = useMemo(() => {
+        const countsMap = { ALL: sessions.length, LIVE: 0, UPCOMING: 0, COMPLETED: 0, INACTIVE: 0 };
+        sessions.forEach((s) => {
+            const cat = getSessionCategory(s);
+            if (countsMap[cat] !== undefined) countsMap[cat]++;
+        });
+        const filtered = sessions.filter((s) => {
+            if (activeCategoryFilter === "ALL") return true;
+            return getSessionCategory(s) === activeCategoryFilter;
+        });
+        return { filteredSessions: filtered, counts: countsMap };
+    }, [sessions, activeCategoryFilter, getSessionCategory]);
 
     const openPicker = (target) => {
         setPickerTarget(target);
@@ -271,8 +301,11 @@ export const SessionsScreen = ({
     };
 
     const renderSession = ({ item }) => {
+        const category = getSessionCategory(item);
         const isScheduled = item.status === "SCHEDULED";
-        const isCompleted = item.status === "COMPLETED";
+        const isCompleted = category === "COMPLETED";
+        const isLive = category === "LIVE";
+        const isInactive = category === "INACTIVE";
 
         // Attendance Window active check
         const currentTime = new Date();
@@ -280,14 +313,40 @@ export const SessionsScreen = ({
         const closesAt = new Date(item.attendanceClosesAt);
         const isWindowOpen = isScheduled && currentTime >= opensAt && currentTime <= closesAt;
 
+        let badgeVariant = item.status;
+        let badgeLabel = item.status;
+        if (isLive) {
+            badgeVariant = "LIVE";
+            badgeLabel = "● LIVE NOW";
+        } else if (item.status === "HOLIDAY") {
+            badgeVariant = "HOLIDAY";
+            badgeLabel = "🏖 HOLIDAY";
+        } else if (item.status === "CANCELLED") {
+            badgeVariant = "CANCELLED";
+            badgeLabel = "✕ CANCELLED";
+        } else if (isCompleted) {
+            badgeVariant = "COMPLETED";
+            badgeLabel = "COMPLETED";
+        } else {
+            badgeVariant = "SCHEDULED";
+            badgeLabel = "⏰ UPCOMING";
+        }
+
         return (
-            <Card style={styles.sessionCard}>
+            <Card
+                style={[
+                    styles.sessionCard,
+                    isLive && styles.sessionCardLive,
+                    isInactive && styles.sessionCardInactive,
+                    isCompleted && styles.sessionCardCompleted,
+                ]}
+            >
                 <View style={styles.cardHeader}>
                     <View style={{ flex: 1 }}>
                         <Text style={styles.sessionTitle}>{item.title}</Text>
                         <Text style={styles.sessionDate}>{formatDate(item.startsAt)}</Text>
                     </View>
-                    <Badge label={item.status} variant={item.status} />
+                    <Badge label={badgeLabel} variant={badgeVariant} />
                 </View>
 
                 <View style={styles.timeInfoBox}>
@@ -309,7 +368,7 @@ export const SessionsScreen = ({
                     <Text style={styles.reasonText}>Note: {item.reason}</Text>
                 ) : null}
 
-                {/* Actions */}
+                {/* Actions & Categorisation Statuses */}
                 <View style={styles.sessionActions}>
                     {!isTeacher ? (
                         item.myAttendance?.status === "PRESENT" ? (
@@ -331,13 +390,39 @@ export const SessionsScreen = ({
                                 textStyle={{ color: COLORS.danger, fontWeight: "700" }}
                             />
                         ) : isScheduled ? (
-                            <Button
-                                title={isWindowOpen ? "👍 Thumb Check-In" : "Mark Attendance"}
-                                variant={isWindowOpen ? "primary" : "secondary"}
-                                size="sm"
-                                onPress={() => onNavigateCheckIn(item, fetchSessions)}
-                                style={styles.actionBtn}
-                            />
+                            isWindowOpen ? (
+                                <Button
+                                    title="👍 Thumb Check-In"
+                                    variant="primary"
+                                    size="sm"
+                                    onPress={() => onNavigateCheckIn(item, fetchSessions)}
+                                    style={styles.actionBtn}
+                                />
+                            ) : (
+                                <View style={styles.upcomingNoteBox}>
+                                    <Text style={styles.upcomingNoteText}>
+                                        ⏰ Attendance opens at {formatTime(item.attendanceOpensAt)}
+                                    </Text>
+                                </View>
+                            )
+                        ) : isCompleted ? (
+                            <View style={styles.inactiveNoteBox}>
+                                <Text style={styles.inactiveNoteText}>
+                                    ✕ Lecture Concluded • Attendance Window Closed
+                                </Text>
+                            </View>
+                        ) : item.status === "HOLIDAY" ? (
+                            <View style={styles.holidayNoteBox}>
+                                <Text style={styles.holidayNoteText}>
+                                    🏖 Class Holiday • No Attendance Required
+                                </Text>
+                            </View>
+                        ) : item.status === "CANCELLED" ? (
+                            <View style={styles.inactiveNoteBox}>
+                                <Text style={styles.inactiveNoteText}>
+                                    ✕ Lecture Cancelled by Instructor
+                                </Text>
+                            </View>
                         ) : null
                     ) : null}
 
@@ -359,7 +444,7 @@ export const SessionsScreen = ({
                                         onPress={() => handleOpenStatusModal(item, "HOLIDAY")}
                                         style={styles.statusOptionBtn}
                                     >
-                                        <Text style={styles.statusOptionText}>Holiday</Text>
+                                        <Text style={[styles.statusOptionText, { color: COLORS.holiday }]}>Holiday</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
                                         onPress={() => handleOpenStatusModal(item, "CANCELLED")}
@@ -397,7 +482,10 @@ export const SessionsScreen = ({
 
             <View style={styles.content}>
                 <View style={styles.topBar}>
-                    <Text style={styles.heading}>Lectures ({sessions.length})</Text>
+                    <View>
+                        <Text style={styles.heading}>Lectures</Text>
+                        <Text style={styles.subheading}>{filteredSessions.length} of {sessions.length} shown</Text>
+                    </View>
                     {canManageSchedule ? (
                         <Button
                             title="+ Schedule Lecture"
@@ -408,6 +496,46 @@ export const SessionsScreen = ({
                             }}
                         />
                     ) : null}
+                </View>
+
+                {/* Categories Filter Tabs Bar */}
+                <View style={styles.categoryBarWrapper}>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.categoryScroll}
+                    >
+                        {[
+                            { key: "ALL", label: `All (${counts.ALL})` },
+                            { key: "LIVE", label: `● Live (${counts.LIVE})`, badgeColor: COLORS.primary },
+                            { key: "UPCOMING", label: `Upcoming (${counts.UPCOMING})`, badgeColor: COLORS.secondary },
+                            { key: "COMPLETED", label: `Completed (${counts.COMPLETED})` },
+                            { key: "INACTIVE", label: `Off/Holidays (${counts.INACTIVE})`, badgeColor: COLORS.holiday },
+                        ].map((cat) => {
+                            const isSelected = activeCategoryFilter === cat.key;
+                            return (
+                                <TouchableOpacity
+                                    key={cat.key}
+                                    activeOpacity={0.7}
+                                    onPress={() => setActiveCategoryFilter(cat.key)}
+                                    style={[
+                                        styles.categoryChip,
+                                        isSelected && styles.categoryChipActive,
+                                    ]}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.categoryChipText,
+                                            isSelected && styles.categoryChipTextActive,
+                                            !isSelected && cat.badgeColor ? { color: cat.badgeColor } : null,
+                                        ]}
+                                    >
+                                        {cat.label}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </ScrollView>
                 </View>
 
                 {error ? (
@@ -427,7 +555,7 @@ export const SessionsScreen = ({
                     <Loading message="Loading sessions..." />
                 ) : (
                     <FlatList
-                        data={sessions}
+                        data={filteredSessions}
                         keyExtractor={(item) => item._id}
                         renderItem={renderSession}
                         contentContainerStyle={styles.listContent}
@@ -441,11 +569,19 @@ export const SessionsScreen = ({
                         ListEmptyComponent={
                             !error && (
                                 <EmptyState
-                                    title="No sessions scheduled"
+                                    title={
+                                        activeCategoryFilter === "ALL"
+                                            ? "No sessions scheduled"
+                                            : `No ${activeCategoryFilter.toLowerCase()} lectures`
+                                    }
                                     message={
-                                        canManageSchedule
+                                        activeCategoryFilter === "LIVE"
+                                            ? "There are no live lectures happening right now."
+                                            : activeCategoryFilter === "INACTIVE"
+                                            ? "No holidays or cancelled sessions recorded."
+                                            : canManageSchedule
                                             ? "Schedule your first lecture session above."
-                                            : "Your teacher has not scheduled any lectures yet."
+                                            : "No lectures found in this category."
                                     }
                                 />
                             )
@@ -646,11 +782,88 @@ const styles = StyleSheet.create({
         fontWeight: "700",
         color: COLORS.textPrimary,
     },
+    subheading: {
+        fontSize: 12,
+        color: COLORS.textSecondary,
+        marginTop: 1,
+    },
+    categoryBarWrapper: {
+        marginBottom: SPACING.md,
+    },
+    categoryScroll: {
+        gap: SPACING.sm,
+        paddingVertical: 2,
+    },
+    categoryChip: {
+        paddingHorizontal: SPACING.md,
+        paddingVertical: 6,
+        borderRadius: RADIUS.full,
+        backgroundColor: COLORS.surface,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+    },
+    categoryChipActive: {
+        backgroundColor: COLORS.primary,
+        borderColor: COLORS.primary,
+    },
+    categoryChipText: {
+        fontSize: 12,
+        fontWeight: "600",
+        color: COLORS.textSecondary,
+    },
+    categoryChipTextActive: {
+        color: COLORS.surface,
+        fontWeight: "700",
+    },
     listContent: {
         paddingBottom: SPACING.xxl,
     },
     sessionCard: {
         padding: SPACING.md,
+    },
+    sessionCardLive: {
+        borderWidth: 1.5,
+        borderColor: COLORS.primary,
+        backgroundColor: "#FFF8F5",
+    },
+    sessionCardInactive: {
+        backgroundColor: COLORS.surfaceMuted,
+    },
+    sessionCardCompleted: {
+        borderColor: COLORS.border,
+    },
+    upcomingNoteBox: {
+        padding: SPACING.sm,
+        backgroundColor: COLORS.secondaryLight,
+        borderRadius: RADIUS.sm,
+        alignItems: "center",
+    },
+    upcomingNoteText: {
+        fontSize: 12,
+        color: COLORS.secondary,
+        fontWeight: "600",
+    },
+    inactiveNoteBox: {
+        padding: SPACING.sm,
+        backgroundColor: COLORS.dangerLight,
+        borderRadius: RADIUS.sm,
+        alignItems: "center",
+    },
+    inactiveNoteText: {
+        fontSize: 12,
+        color: COLORS.danger,
+        fontWeight: "600",
+    },
+    holidayNoteBox: {
+        padding: SPACING.sm,
+        backgroundColor: COLORS.holidayLight,
+        borderRadius: RADIUS.sm,
+        alignItems: "center",
+    },
+    holidayNoteText: {
+        fontSize: 12,
+        color: COLORS.holiday,
+        fontWeight: "600",
     },
     cardHeader: {
         flexDirection: "row",

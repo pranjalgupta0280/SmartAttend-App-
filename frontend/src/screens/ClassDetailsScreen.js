@@ -135,9 +135,9 @@ export const ClassDetailsScreen = ({
                                 <Text style={styles.actionIcon}>🕒</Text>
                             </View>
                             <View style={styles.actionTextContainer}>
-                                <Text style={styles.actionTitle}>Sessions & Check-In</Text>
+                                <Text style={styles.actionTitle}>Lecture Sessions</Text>
                                 <Text style={styles.actionDesc}>
-                                    View scheduled lectures and submit photo + GPS check-in
+                                    View active & scheduled lectures, submit thumb check-in
                                 </Text>
                             </View>
                             <Text style={styles.chevron}>›</Text>
@@ -145,12 +145,12 @@ export const ClassDetailsScreen = ({
 
                         <Card onPress={onNavigateMyAttendance} style={styles.actionCard}>
                             <View style={styles.actionIconContainer}>
-                                <Text style={styles.actionIcon}>📊</Text>
+                                <Text style={styles.actionIcon}>📅</Text>
                             </View>
                             <View style={styles.actionTextContainer}>
-                                <Text style={styles.actionTitle}>My Attendance History</Text>
+                                <Text style={styles.actionTitle}>Attendance & Calendar</Text>
                                 <Text style={styles.actionDesc}>
-                                    Check your overall percentage and date-wise record
+                                    Interactive calendar, percentage health rate, and history
                                 </Text>
                             </View>
                             <Text style={styles.chevron}>›</Text>

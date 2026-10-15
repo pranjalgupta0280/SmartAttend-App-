@@ -1,21 +1,39 @@
 export const COLORS = {
-    primary: "#4338CA",       // Indigo
-    primaryLight: "#EEF2FF",
-    secondary: "#2563EB",     // Blue
-    secondaryLight: "#EFF6FF",
-    success: "#16A34A",       // Green
-    successLight: "#F0FDF4",
-    warning: "#D97706",       // Amber
-    warningLight: "#FFFBEB",
-    danger: "#DC2626",        // Red
-    dangerLight: "#FEF2F2",
-    background: "#F8FAFC",    // Slate 50
+    // Aesthetic Peach & Light Sage Green Palette
+    primary: "#E07A5F",         // Warm Terracotta / Rich Peach
+    primaryLight: "#FFF1EC",    // Soft Peach Cream
+    primaryDark: "#C85A3F",
+
+    secondary: "#439A72",       // Light Sage / Matcha Green
+    secondaryLight: "#EAF5EE",  // Soft Mint Tint
+    secondaryDark: "#2D6A4F",
+
+    peach: "#F48C6A",
+    peachLight: "#FFF3EE",
+    
+    sageGreen: "#439A72",
+    sageGreenLight: "#EAF5EE",
+
+    holiday: "#7C3AED",         // Soft Violet for Holidays
+    holidayLight: "#F5F3FF",
+
+    success: "#2E7D32",         // Attendance Present (Vibrant Sage)
+    successLight: "#E8F5E9",
+
+    warning: "#D97706",         // Scheduled / Pending (Warm Amber)
+    warningLight: "#FEF3C7",
+
+    danger: "#E53935",          // Absent / Danger (Soft Crimson)
+    dangerLight: "#FEE2E2",
+
+    background: "#FAF7F4",      // Warm organic paper background
     surface: "#FFFFFF",
-    surfaceMuted: "#F1F5F9",
-    border: "#E2E8F0",
-    textPrimary: "#0F172A",   // Slate 900
-    textSecondary: "#64748B", // Slate 500
-    textMuted: "#94A3B8",
+    surfaceMuted: "#F4EFEA",
+    border: "#E9E3DC",
+
+    textPrimary: "#26221F",     // Deep Warm Charcoal
+    textSecondary: "#6E665F",   // Soft Earth Slate
+    textMuted: "#A59E97",
 };
 
 export const SPACING = {
@@ -33,3 +51,4 @@ export const RADIUS = {
     lg: 14,
     full: 9999,
 };
+

@@ -21,6 +21,12 @@ export const Badge = ({ label, variant, style, textStyle }) => {
             bg = "#FEF3C7"; // Amber light
             color = "#B45309";
             break;
+        case "LIVE":
+        case "LIVE NOW":
+        case "ACTIVE":
+            bg = COLORS.primaryLight;
+            color = COLORS.primaryDark;
+            break;
         case "PRESENT":
             bg = COLORS.successLight;
             color = COLORS.success;
@@ -31,6 +37,7 @@ export const Badge = ({ label, variant, style, textStyle }) => {
             break;
         case "PENDING":
         case "SCHEDULED":
+        case "UPCOMING":
             bg = COLORS.warningLight;
             color = COLORS.warning;
             break;
@@ -39,9 +46,12 @@ export const Badge = ({ label, variant, style, textStyle }) => {
             color = COLORS.textSecondary;
             break;
         case "HOLIDAY":
+            bg = COLORS.holidayLight;
+            color = COLORS.holiday;
+            break;
         case "CANCELLED":
-            bg = "#F3F4F6";
-            color = "#6B7280";
+            bg = COLORS.dangerLight;
+            color = COLORS.danger;
             break;
     }
 
