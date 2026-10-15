@@ -24,7 +24,7 @@ export const getMe = async (req, res) => {
 // POST /api/auth/register
 export const register = async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        const { name, email, password, biometricEnrolled } = req.body;
 
         if (
             typeof name !== "string" ||
@@ -56,7 +56,8 @@ export const register = async (req, res) => {
         const user = await User.create({
             name: name.trim(),
             email: normalizedEmail,
-            passwordHash
+            passwordHash,
+            biometricEnrolled: Boolean(biometricEnrolled)
         });
 
         const token = createToken(user._id);
@@ -67,7 +68,8 @@ export const register = async (req, res) => {
             user: {
                 id: user._id,
                 name: user.name,
-                email: user.email
+                email: user.email,
+                biometricEnrolled: user.biometricEnrolled
             }
         });
     } catch (error) {
