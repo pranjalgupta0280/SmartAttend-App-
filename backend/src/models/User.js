@@ -26,6 +26,10 @@ const userSchema = new mongoose.Schema(
         isActive: {
             type: Boolean,
             default: true
+        },
+        biometricEnrolled: {
+            type: Boolean,
+            default: false
         }
     },
     { timestamps: true }

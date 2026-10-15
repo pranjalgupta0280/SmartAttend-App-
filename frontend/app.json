@@ -1,0 +1,58 @@
+{
+  "expo": {
+    "name": "SmartAttend",
+    "slug": "smartattend",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "SmartAttend requires biometric authentication to verify student identity during attendance check-in.",
+        "NSCameraUsageDescription": "SmartAttend requires camera access to take attendance verification photos.",
+        "NSLocationWhenInUseUsageDescription": "SmartAttend requires location access to verify physical presence inside the classroom."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": [
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow SmartAttend to use Face ID / Biometrics for attendance verification."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "SmartAttend requires camera access to capture attendance verification photos."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "SmartAttend requires location access to verify your presence inside the classroom geofence."
+        }
+      ]
+    ]
+  }
+}

@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import Class from "../models/Class.js";
 import ClassMembership from "../models/ClassMembership.js";
 import AttendanceSession from "../models/AttendanceSession.js";
+import AttendanceRecord from "../models/AttendanceRecord.js";
 
 const canManageSchedule = async (userId, classId) => {
     const membership = await ClassMembership.findOne({
@@ -131,9 +132,34 @@ export const getClassSessions = async (req, res) => {
         const sessions = await AttendanceSession.find({ classId })
             .sort({ startsAt: 1 });
 
+        let myAttendanceMap = new Map();
+        if (membership.role === "STUDENT") {
+            const records = await AttendanceRecord.find({
+                classId,
+                studentId: req.user.id,
+                sessionId: { $in: sessions.map((s) => s._id) }
+            }).select("sessionId status markedAt method");
+
+            records.forEach((r) => {
+                myAttendanceMap.set(r.sessionId.toString(), {
+                    status: r.status,
+                    markedAt: r.markedAt,
+                    method: r.method
+                });
+            });
+        }
+
+        const sessionsWithAttendance = sessions.map((session) => {
+            const sessionObj = session.toObject();
+            if (membership.role === "STUDENT") {
+                sessionObj.myAttendance = myAttendanceMap.get(session._id.toString()) || null;
+            }
+            return sessionObj;
+        });
+
         return res.status(200).json({
-            count: sessions.length,
-            sessions
+            count: sessionsWithAttendance.length,
+            sessions: sessionsWithAttendance
         });
     } catch (error) {
         console.error("Get sessions error:", error.message);

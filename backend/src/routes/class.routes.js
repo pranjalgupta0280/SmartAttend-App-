@@ -27,6 +27,10 @@ import {
     getMyClassAttendance
 } from "../controllers/attendance.controller.js";
 
+import {
+    attendancePhotoUpload
+} from "../middleware/attendanceUpload.middleware.js";
+
 router.use(protect);
 
 router.post("/", createClass);
@@ -48,10 +52,7 @@ router.patch(
     "/:classId/sessions/:sessionId/status",
     updateSessionStatus
 );
-router.post(
-    "/:classId/sessions/:sessionId/check-in",
-    checkIn
-);
+
 
 router.get(
     "/:classId/sessions/:sessionId/attendance",
@@ -60,5 +61,10 @@ router.get(
 router.get(
     "/:classId/my-attendance",
     getMyClassAttendance
+);
+router.post(
+    "/:classId/sessions/:sessionId/check-in",
+    attendancePhotoUpload,
+    checkIn
 );
 export default router;

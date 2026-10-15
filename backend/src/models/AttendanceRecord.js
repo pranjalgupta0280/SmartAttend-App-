@@ -30,10 +30,10 @@ const attendanceRecordSchema = new mongoose.Schema(
 
         method: {
             type: String,
-            enum: ["PHOTO_GPS", "MANUAL", "SYSTEM"]
+            enum: ["PHOTO_GPS", "BIOMETRIC", "THUMB_SCAN", "MANUAL", "SYSTEM"]
         },
 
-        photoUrl: {
+        photoPath: {
             type: String,
             default: ""
         },
