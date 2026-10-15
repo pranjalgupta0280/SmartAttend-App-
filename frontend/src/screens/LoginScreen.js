@@ -13,7 +13,8 @@ import { useAuth } from "../context/AuthContext.js";
 import { Input } from "../components/Input.js";
 import { Button } from "../components/Button.js";
 import { COLORS, SPACING, RADIUS } from "../constants/theme.js";
-import { getApiBaseUrl, setApiBaseUrl } from "../config/api.js";
+import { getApiBaseUrl, setApiBaseUrl, KNOWN_SERVERS } from "../config/api.js";
+import { SmartAttendLogo } from "../components/SmartAttendLogo.js";
 
 export const LoginScreen = ({ onNavigateToRegister }) => {
     const { login } = useAuth();
@@ -59,10 +60,7 @@ export const LoginScreen = ({ onNavigateToRegister }) => {
                 keyboardShouldPersistTaps="handled"
             >
                 <View style={styles.headerContainer}>
-                    <Text style={styles.brandTitle}>SmartAttend</Text>
-                    <Text style={styles.brandSubtitle}>
-                        Fast, Geofenced Classroom Attendance
-                    </Text>
+                    <SmartAttendLogo width={200} height={170} />
                 </View>
 
                 <View style={styles.card}>
@@ -119,8 +117,40 @@ export const LoginScreen = ({ onNavigateToRegister }) => {
 
                     {showServerConfig ? (
                         <View style={styles.configBox}>
+                            <Text style={styles.configHelpText}>Configured Network IPs:</Text>
+                            <View style={styles.quickIpRow}>
+                                {KNOWN_SERVERS.map((srv) => {
+                                    const isSelected = serverUrl.trim().toLowerCase() === srv.toLowerCase();
+                                    const label = srv.includes("10.5.52.192")
+                                        ? "10.5.52.192 (PC Current)"
+                                        : "192.168.29.57 (Home)";
+                                    return (
+                                        <TouchableOpacity
+                                            key={srv}
+                                            style={[
+                                                styles.quickIpChip,
+                                                isSelected && styles.quickIpChipActive,
+                                            ]}
+                                            onPress={() => {
+                                                setServerUrl(srv);
+                                                setApiBaseUrl(srv);
+                                            }}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.quickIpText,
+                                                    isSelected && styles.quickIpTextActive,
+                                                ]}
+                                            >
+                                                {label}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+
                             <Input
-                                label="Backend Server URL"
+                                label="Active Backend Server URL"
                                 value={serverUrl}
                                 onChangeText={setServerUrl}
                                 placeholder="http://10.5.52.192:5000"
@@ -235,5 +265,38 @@ const styles = StyleSheet.create({
         marginTop: SPACING.sm,
         borderWidth: 1,
         borderColor: COLORS.border,
+    },
+    configHelpText: {
+        fontSize: 12,
+        fontWeight: "600",
+        color: COLORS.textSecondary,
+        marginBottom: SPACING.xs,
+    },
+    quickIpRow: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: SPACING.sm,
+        marginBottom: SPACING.md,
+    },
+    quickIpChip: {
+        paddingHorizontal: SPACING.sm + 2,
+        paddingVertical: 6,
+        borderRadius: RADIUS.sm,
+        backgroundColor: COLORS.surfaceMuted,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+    },
+    quickIpChipActive: {
+        backgroundColor: COLORS.primaryLight,
+        borderColor: COLORS.primary,
+    },
+    quickIpText: {
+        fontSize: 11,
+        fontWeight: "600",
+        color: COLORS.textSecondary,
+    },
+    quickIpTextActive: {
+        color: COLORS.primaryDark,
+        fontWeight: "700",
     },
 });

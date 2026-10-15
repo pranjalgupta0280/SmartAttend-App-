@@ -13,6 +13,7 @@ import { useAuth } from "../context/AuthContext.js";
 import { Input } from "../components/Input.js";
 import { Button } from "../components/Button.js";
 import { COLORS, SPACING, RADIUS } from "../constants/theme.js";
+import { SmartAttendLogo } from "../components/SmartAttendLogo.js";
 
 export const RegisterScreen = ({ onNavigateToLogin }) => {
     const { register } = useAuth();
@@ -94,6 +95,7 @@ export const RegisterScreen = ({ onNavigateToLogin }) => {
                 keyboardShouldPersistTaps="handled"
             >
                 <View style={styles.headerContainer}>
+                    <SmartAttendLogo width={110} height={95} showWordmark={false} style={{ alignSelf: "center", marginBottom: SPACING.xs }} />
                     <Text style={styles.brandTitle}>Create Account</Text>
                     <Text style={styles.brandSubtitle}>
                         Join SmartAttend with Biometric Thumb Verification

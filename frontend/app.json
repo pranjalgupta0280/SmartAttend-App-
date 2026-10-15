@@ -4,7 +4,7 @@
     "slug": "smartattend",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/SmartAttendance Geolocation Logo.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
@@ -14,12 +14,17 @@
         "NSLocationWhenInUseUsageDescription": "SmartAttend requires location access to verify physical presence inside the classroom."
       }
     },
+    "splash": {
+      "image": "./assets/smartattend-logo.svg",
+      "resizeMode": "contain",
+      "backgroundColor": "#FAF7F4"
+    },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundColor": "#FAF7F4",
+        "foregroundImage": "./assets/smartattend-logo.svg",
         "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "monochromeImage": "./assets/smartattend-logo.svg"
       },
       "permissions": [
         "android.permission.USE_BIOMETRIC",
@@ -30,7 +35,7 @@
       ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/smartattend-logo.svg"
     },
     "plugins": [
       "expo-secure-store",

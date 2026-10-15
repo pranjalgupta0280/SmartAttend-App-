@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Platform, StatusBar } from "react-native";
 import { COLORS, SPACING } from "../constants/theme.js";
+import { SmartAttendLogo } from "./SmartAttendLogo.js";
 
 export const Header = ({ title, subtitle, onBack, rightAction }) => {
     return (
@@ -19,9 +20,19 @@ export const Header = ({ title, subtitle, onBack, rightAction }) => {
             </View>
 
             <View style={styles.center}>
-                <Text style={styles.title} numberOfLines={1}>
-                    {title}
-                </Text>
+                <View style={styles.titleRow}>
+                    {title === "SmartAttend" ? (
+                        <SmartAttendLogo
+                            width={24}
+                            height={22}
+                            showWordmark={false}
+                            style={{ marginRight: 6 }}
+                        />
+                    ) : null}
+                    <Text style={styles.title} numberOfLines={1}>
+                        {title}
+                    </Text>
+                </View>
                 {subtitle ? (
                     <Text style={styles.subtitle} numberOfLines={1}>
                         {subtitle}
@@ -62,6 +73,11 @@ const styles = StyleSheet.create({
     },
     center: {
         flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    titleRow: {
+        flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
     },

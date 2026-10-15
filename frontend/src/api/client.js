@@ -1,4 +1,4 @@
-import { getApiBaseUrl } from "../config/api.js";
+import { getApiBaseUrl, setApiBaseUrl, getAlternateBaseUrl } from "../config/api.js";
 
 let onUnauthorizedHandler = null;
 
@@ -7,13 +7,13 @@ export const setOnUnauthorized = (handler) => {
 };
 
 /**
- * Universal API Request helper
+ * Universal API Request helper with dual-IP auto-failover
  * @param {string} endpoint - Path like '/api/auth/login'
  * @param {object} options - { method, token, body, isFormData }
  */
 export const apiRequest = async (endpoint, { method = "GET", token, body, isFormData = false } = {}) => {
-    const baseUrl = getApiBaseUrl();
-    const url = `${baseUrl}${endpoint}`;
+    let baseUrl = getApiBaseUrl();
+    let url = `${baseUrl}${endpoint}`;
 
     const headers = {};
 
@@ -38,9 +38,24 @@ export const apiRequest = async (endpoint, { method = "GET", token, body, isForm
     try {
         response = await fetch(url, fetchOptions);
     } catch (networkError) {
-        throw new Error(
-            networkError.message || `Unable to connect to server at ${baseUrl}`
-        );
+        // Automatic fallback between the two configured IPs
+        const altBase = getAlternateBaseUrl();
+        if (altBase && altBase.toLowerCase() !== baseUrl.toLowerCase()) {
+            try {
+                const altUrl = `${altBase}${endpoint}`;
+                response = await fetch(altUrl, fetchOptions);
+                // Switch default to the responsive IP
+                setApiBaseUrl(altBase);
+            } catch (altError) {
+                throw new Error(
+                    `Connection failed to ${baseUrl} and ${altBase}. Please ensure your phone is connected to the same Wi-Fi network.`
+                );
+            }
+        } else {
+            throw new Error(
+                networkError.message || `Unable to connect to server at ${baseUrl}`
+            );
+        }
     }
 
     if (response.status === 401) {
