@@ -4,6 +4,8 @@ import Class from "../models/Class.js";
 import ClassMembership from "../models/ClassMembership.js";
 import AttendanceSession from "../models/AttendanceSession.js";
 import AttendanceRecord from "../models/AttendanceRecord.js";
+import { randomUUID } from "node:crypto";
+import supabase from "../config/storage.js";
 
 const getDistanceMeters = (lat1, lon1, lat2, lon2) => {
     const toRadians = degrees => degrees * Math.PI / 180;
@@ -24,10 +26,16 @@ const getDistanceMeters = (lat1, lon1, lat2, lon2) => {
 };
 
 // POST /api/classes/:classId/sessions/:sessionId/check-in
+
 export const checkIn = async (req, res) => {
+    let uploadedPath = null;
+
+    const bucket =
+        process.env.SUPABASE_ATTENDANCE_BUCKET || "attendance-photos";
+
     try {
         const { classId, sessionId } = req.params;
-        const { latitude, longitude, photoUrl } = req.body;
+        const { latitude: latInput, longitude: lonInput, biometricVerified } = req.body;
 
         if (
             !mongoose.isValidObjectId(classId) ||
@@ -38,24 +46,44 @@ export const checkIn = async (req, res) => {
             });
         }
 
-        if (
-            typeof latitude !== "number" ||
-            !Number.isFinite(latitude) ||
-            latitude < -90 ||
-            latitude > 90 ||
-            typeof longitude !== "number" ||
-            !Number.isFinite(longitude) ||
-            longitude < -180 ||
-            longitude > 180 ||
-            typeof photoUrl !== "string" ||
-            !photoUrl.trim()
-        ) {
+        const isBiometric =
+            biometricVerified === true ||
+            biometricVerified === "true";
+
+        if (!isBiometric && !req.file) {
             return res.status(400).json({
-                message: "Valid coordinates and a photo reference are required"
+                message: "A verified biometric thumb scan or photo is required"
             });
         }
 
-        // 1. Verify the logged-in user is an enrolled student.
+        if (
+            latInput === undefined ||
+            lonInput === undefined ||
+            String(latInput).trim() === "" ||
+            String(lonInput).trim() === ""
+        ) {
+            return res.status(400).json({
+                message: "Latitude and longitude are required"
+            });
+        }
+
+        const latitude = Number(latInput);
+        const longitude = Number(lonInput);
+
+        if (
+            !Number.isFinite(latitude) ||
+            latitude < -90 ||
+            latitude > 90 ||
+            !Number.isFinite(longitude) ||
+            longitude < -180 ||
+            longitude > 180
+        ) {
+            return res.status(400).json({
+                message: "Invalid coordinates"
+            });
+        }
+
+        // 1. Verify student enrollment.
         const membership = await ClassMembership.findOne({
             userId: req.user.id,
             classId,
@@ -65,11 +93,11 @@ export const checkIn = async (req, res) => {
 
         if (!membership) {
             return res.status(403).json({
-                message: "You are not enrolled as a student in this class"
+                message: "You are not enrolled in this class"
             });
         }
 
-        // 2. Fetch the class and the session belonging to it.
+        // 2. Verify class and session.
         const classDoc = await Class.findOne({
             _id: classId,
             isActive: true
@@ -98,7 +126,7 @@ export const checkIn = async (req, res) => {
             });
         }
 
-        // 3. Verify the server's current time is within the window.
+        // 3. Validate the server's current time.
         const now = new Date();
 
         if (
@@ -106,11 +134,11 @@ export const checkIn = async (req, res) => {
             now > session.attendanceClosesAt
         ) {
             return res.status(403).json({
-                message: "Attendance is outside the allowed time window"
+                message: "Outside the attendance time window"
             });
         }
 
-        // 4. Verify the class has an attendance location configured.
+        // 4. Validate the configured classroom location.
         const location = classDoc.location;
 
         if (
@@ -120,7 +148,7 @@ export const checkIn = async (req, res) => {
             typeof location.radiusMeters !== "number"
         ) {
             return res.status(409).json({
-                message: "The teacher has not configured the attendance location"
+                message: "Attendance location is not configured"
             });
         }
 
@@ -133,12 +161,12 @@ export const checkIn = async (req, res) => {
 
         if (distanceMeters > location.radiusMeters) {
             return res.status(403).json({
-                message: "You are outside the permitted attendance radius",
+                message: "You are outside the permitted radius",
                 distanceMeters: Math.round(distanceMeters)
             });
         }
 
-        // 5. Never overwrite an existing present or absent record.
+        // 5. Check for an existing final attendance record.
         const existingRecord = await AttendanceRecord.findOne({
             sessionId,
             studentId: req.user.id
@@ -146,17 +174,66 @@ export const checkIn = async (req, res) => {
 
         if (existingRecord && existingRecord.status !== "PENDING") {
             return res.status(409).json({
-                message: "Attendance has already been recorded for this lecture"
+                message: "Attendance has already been recorded"
             });
         }
 
+        // 6. Handle photo upload if not biometric
+        let objectPath = "";
+        let method = "BIOMETRIC";
+
+        if (!isBiometric) {
+            method = "PHOTO_GPS";
+            const extensionByType = {
+                "image/jpeg": "jpg",
+                "image/png": "png",
+                "image/webp": "webp"
+            };
+
+            const extension = extensionByType[req.file.mimetype];
+
+            if (!extension) {
+                return res.status(400).json({
+                    message: "Unsupported photo format"
+                });
+            }
+
+            objectPath =
+                `${classId}/${sessionId}/${req.user.id}/` +
+                `${Date.now()}-${randomUUID()}.${extension}`;
+
+            if (!supabase) {
+                return res.status(500).json({
+                    message: "Photo storage is not configured. Add SUPABASE_URL and SUPABASE_SECRET_KEY to .env"
+                });
+            }
+
+            const { error: uploadError } = await supabase.storage
+                .from(bucket)
+                .upload(objectPath, req.file.buffer, {
+                    contentType: req.file.mimetype,
+                    cacheControl: "3600",
+                    upsert: false
+                });
+
+            if (uploadError) {
+                console.error("Supabase storage error:", uploadError);
+                throw new Error(
+                    `Supabase upload failed: ${uploadError.message}. Make sure SUPABASE_SECRET_KEY in .env is the 'service_role' secret key.`
+                );
+            }
+
+            uploadedPath = objectPath;
+        }
+
+        // 7. Store attendance record
         const recordData = {
             classId,
             sessionId,
             studentId: req.user.id,
             status: "PRESENT",
-            method: "PHOTO_GPS",
-            photoUrl: photoUrl.trim(),
+            method,
+            photoPath: objectPath,
             submittedLocation: { latitude, longitude },
             distanceMeters: Math.round(distanceMeters),
             markedAt: now,
@@ -172,6 +249,9 @@ export const checkIn = async (req, res) => {
             record = await AttendanceRecord.create(recordData);
         }
 
+        // Keep the uploaded object after a successful database save.
+        uploadedPath = null;
+
         return res.status(201).json({
             message: "Attendance marked successfully",
             attendance: {
@@ -183,16 +263,27 @@ export const checkIn = async (req, res) => {
             }
         });
     } catch (error) {
+        // Clean up the uploaded image if saving attendance fails.
+        if (uploadedPath) {
+            const { error: cleanupError } = await supabase.storage
+                .from(bucket)
+                .remove([uploadedPath]);
+
+            if (cleanupError) {
+                console.error("Photo cleanup failed:", cleanupError.message);
+            }
+        }
+
         if (error.code === 11000) {
             return res.status(409).json({
                 message: "Attendance has already been recorded"
             });
         }
 
-        console.error("Student check-in error:", error.message);
+        console.error("Check-in error:", error.message);
 
         return res.status(500).json({
-            message: "Failed to mark attendance"
+            message: error.message || "Failed to upload photo or mark attendance"
         });
     }
 };
