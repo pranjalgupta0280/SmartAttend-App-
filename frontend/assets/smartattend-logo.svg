@@ -1,52 +1,45 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1100" role="img" aria-labelledby="title desc">
-  <title id="title">SmartAttend logo</title>
-  <desc id="desc">A blue location pin containing a person and a check mark, framed by teal scanning corners, above the SmartAttend wordmark.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="200 0 800 800" width="800" height="800" role="img" aria-labelledby="title desc">
+  <title id="title">SmartAttend Logo</title>
+  <desc id="desc">Peach and sage green geofenced biometric check-in mark</desc>
   <defs>
-    <linearGradient id="pinGradient" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#147BFF"/>
-      <stop offset="0.55" stop-color="#155EEF"/>
-      <stop offset="1" stop-color="#1747C8"/>
+    <!-- Peach / Terracotta Pin Gradient (matches COLORS.primary & COLORS.peach) -->
+    <linearGradient id="pinGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#E07A5F"/>
+      <stop offset="55%" stop-color="#F48C6A"/>
+      <stop offset="100%" stop-color="#C85A3F"/>
     </linearGradient>
-    <linearGradient id="scanGradient" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#08C98D"/>
-      <stop offset="1" stop-color="#00AFC4"/>
+
+    <!-- Sage / Matcha Green Scan Gradient (matches COLORS.secondary) -->
+    <linearGradient id="scanGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#439A72"/>
+      <stop offset="100%" stop-color="#2D6A4F"/>
     </linearGradient>
-    <linearGradient id="attendGradient" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#1664E8"/>
-      <stop offset="0.56" stop-color="#08A9D8"/>
-      <stop offset="1" stop-color="#00C58B"/>
-    </linearGradient>
+
     <filter id="softShadow" x="-30%" y="-25%" width="160%" height="170%">
-      <feDropShadow dx="0" dy="9" stdDeviation="11" flood-color="#1747C8" flood-opacity="0.12"/>
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#C85A3F" flood-opacity="0.18"/>
     </filter>
   </defs>
 
-  <!-- Scan brackets -->
-  <g fill="none" stroke="url(#scanGradient)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Scan Brackets -->
+  <g fill="none" stroke="url(#scanGrad)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round">
     <path d="M382 245 V207 Q382 168 421 168 H462"/>
     <path d="M738 168 H779 Q818 168 818 207 V245"/>
     <path d="M382 445 V483 Q382 522 421 522 H462"/>
     <path d="M738 522 H779 Q818 522 818 483 V445"/>
   </g>
 
-  <!-- Location marker -->
+  <!-- Location Pin with Person Symbol & Verification Checkmark -->
   <g filter="url(#softShadow)">
-    <path d="M600 145 C493 145 410 228 410 333 C410 455 526 553 600 635 C674 553 790 455 790 333 C790 228 707 145 600 145 Z" fill="url(#pinGradient)"/>
+    <path d="M600 145 C493 145 410 228 410 333 C410 455 526 553 600 635 C674 553 790 455 790 333 C790 228 707 145 600 145 Z" fill="url(#pinGrad)"/>
     <circle cx="600" cy="323" r="124" fill="#FFFFFF"/>
 
     <!-- Person symbol -->
-    <circle cx="600" cy="289" r="35" fill="url(#pinGradient)"/>
-    <path d="M530 372 C543 333 570 315 600 315 C630 315 657 333 670 372 C650 393 628 405 600 405 C572 405 550 393 530 372 Z" fill="url(#pinGradient)"/>
+    <circle cx="600" cy="289" r="35" fill="url(#pinGrad)"/>
+    <path d="M530 372 C543 333 570 315 600 315 C630 315 657 333 670 372 C650 393 628 405 600 405 C572 405 550 393 530 372 Z" fill="url(#pinGrad)"/>
 
-    <!-- Verified check overlays the lower-right of the user badge -->
+    <!-- Verified check badge -->
     <circle cx="669" cy="374" r="38" fill="#FFFFFF"/>
-    <circle cx="669" cy="374" r="31" fill="url(#scanGradient)"/>
+    <circle cx="669" cy="374" r="31" fill="url(#scanGrad)"/>
     <path d="M654 374 L665 385 L685 361" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
-
-  <!-- Wordmark -->
-  <g font-family="Inter, Avenir Next, Montserrat, Arial, sans-serif" font-size="116" font-weight="750" letter-spacing="-5">
-    <text x="600" y="800" text-anchor="middle" fill="#101B3D">Smart<tspan fill="url(#attendGradient)">Attend</tspan></text>
-  </g>
-  <text x="600" y="862" text-anchor="middle" font-family="Inter, Avenir Next, Arial, sans-serif" font-size="24" font-weight="500" letter-spacing="4" fill="#64748B">SMART, SIMPLE, VERIFIED</text>
 </svg>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
     View,
     Text,
@@ -6,6 +6,9 @@ import {
     ScrollView,
     Alert,
     ActivityIndicator,
+    KeyboardAvoidingView,
+    Platform,
+    Keyboard,
 } from "react-native";
 import * as Location from "expo-location";
 import { useAuth } from "../context/AuthContext.js";
@@ -34,6 +37,31 @@ export const LocationSettingsScreen = ({ classItem, onBack, onUpdateClass }) => 
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
+
+    const scrollViewRef = useRef(null);
+    const [keyboardOffset, setKeyboardOffset] = useState(0);
+
+    useEffect(() => {
+        const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+        const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+        const showSub = Keyboard.addListener(showEvent, (e) => {
+            const height = e?.endCoordinates?.height || 280;
+            setKeyboardOffset(height);
+            setTimeout(() => {
+                scrollViewRef.current?.scrollToEnd({ animated: true });
+            }, 100);
+        });
+
+        const hideSub = Keyboard.addListener(hideEvent, () => {
+            setKeyboardOffset(0);
+        });
+
+        return () => {
+            showSub.remove();
+            hideSub.remove();
+        };
+    }, []);
 
     const handleGetCurrentLocation = async () => {
         setError("");
@@ -123,68 +151,88 @@ export const LocationSettingsScreen = ({ classItem, onBack, onUpdateClass }) => 
                 onBack={onBack}
             />
 
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-                <Card style={styles.infoCard}>
-                    <Text style={styles.infoTitle}>📍 Geofence Configuration</Text>
-                    <Text style={styles.infoDesc}>
-                        Students must be physically present within this radius of the
-                        classroom coordinates when submitting their photo check-in.
-                    </Text>
-                </Card>
+            <KeyboardAvoidingView
+                style={styles.keyboardView}
+                behavior={Platform.OS === "ios" ? "padding" : undefined}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
+            >
+                <ScrollView
+                    ref={scrollViewRef}
+                    style={styles.scrollView}
+                    contentContainerStyle={[
+                        styles.scrollContent,
+                        { paddingBottom: keyboardOffset > 0 ? keyboardOffset + 40 : 100 },
+                    ]}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={true}
+                >
+                    <Card style={styles.infoCard}>
+                        <Text style={styles.infoTitle}>📍 Geofence Configuration</Text>
+                        <Text style={styles.infoDesc}>
+                            Students must be physically present within this radius of the
+                            classroom coordinates when submitting their photo check-in.
+                        </Text>
+                    </Card>
 
-                {error ? (
-                    <View style={styles.errorBox}>
-                        <Text style={styles.errorText}>{error}</Text>
+                    {error ? (
+                        <View style={styles.errorBox}>
+                            <Text style={styles.errorText}>{error}</Text>
+                        </View>
+                    ) : null}
+
+                    {successMessage ? (
+                        <View style={styles.successBox}>
+                            <Text style={styles.successText}>{successMessage}</Text>
+                        </View>
+                    ) : null}
+
+                    <View style={styles.formCard}>
+                        <Button
+                            title="📡 Use My Current Location"
+                            variant="outline"
+                            onPress={handleGetCurrentLocation}
+                            loading={fetchingGps}
+                            style={styles.gpsBtn}
+                        />
+
+                        <Input
+                            label="Latitude (-90 to 90) *"
+                            value={latitude}
+                            onChangeText={setLatitude}
+                            placeholder="e.g. 28.613939"
+                            keyboardType="numeric"
+                        />
+
+                        <Input
+                            label="Longitude (-180 to 180) *"
+                            value={longitude}
+                            onChangeText={setLongitude}
+                            placeholder="e.g. 77.209021"
+                            keyboardType="numeric"
+                        />
+
+                        <Input
+                            label="Allowed Radius (1 - 1000 metres) *"
+                            value={radiusMeters}
+                            onChangeText={setRadiusMeters}
+                            placeholder="e.g. 100"
+                            keyboardType="number-pad"
+                            onFocus={() => {
+                                setTimeout(() => {
+                                    scrollViewRef.current?.scrollToEnd({ animated: true });
+                                }, 150);
+                            }}
+                        />
+
+                        <Button
+                            title="Save Geofence"
+                            onPress={handleSave}
+                            loading={saving}
+                            style={styles.saveBtn}
+                        />
                     </View>
-                ) : null}
-
-                {successMessage ? (
-                    <View style={styles.successBox}>
-                        <Text style={styles.successText}>{successMessage}</Text>
-                    </View>
-                ) : null}
-
-                <View style={styles.formCard}>
-                    <Button
-                        title="📡 Use My Current Location"
-                        variant="outline"
-                        onPress={handleGetCurrentLocation}
-                        loading={fetchingGps}
-                        style={styles.gpsBtn}
-                    />
-
-                    <Input
-                        label="Latitude (-90 to 90) *"
-                        value={latitude}
-                        onChangeText={setLatitude}
-                        placeholder="e.g. 28.613939"
-                        keyboardType="numeric"
-                    />
-
-                    <Input
-                        label="Longitude (-180 to 180) *"
-                        value={longitude}
-                        onChangeText={setLongitude}
-                        placeholder="e.g. 77.209021"
-                        keyboardType="numeric"
-                    />
-
-                    <Input
-                        label="Allowed Radius (1 - 1000 metres) *"
-                        value={radiusMeters}
-                        onChangeText={setRadiusMeters}
-                        placeholder="e.g. 100"
-                        keyboardType="number-pad"
-                    />
-
-                    <Button
-                        title="Save Geofence"
-                        onPress={handleSave}
-                        loading={saving}
-                        style={styles.saveBtn}
-                    />
-                </View>
-            </ScrollView>
+                </ScrollView>
+            </KeyboardAvoidingView>
         </View>
     );
 };
@@ -193,6 +241,12 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: COLORS.background,
+    },
+    keyboardView: {
+        flex: 1,
+    },
+    scrollView: {
+        flex: 1,
     },
     scrollContent: {
         padding: SPACING.lg,

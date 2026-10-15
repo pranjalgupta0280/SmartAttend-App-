@@ -4,7 +4,7 @@
     "slug": "smartattend",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/SmartAttendance Geolocation Logo.png",
+    "icon": "./assets/smartattend-logo.svg",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
@@ -20,6 +20,7 @@
       "backgroundColor": "#FAF7F4"
     },
     "android": {
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "backgroundColor": "#FAF7F4",
         "foregroundImage": "./assets/smartattend-logo.svg",

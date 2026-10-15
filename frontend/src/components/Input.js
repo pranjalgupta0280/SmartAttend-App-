@@ -15,6 +15,7 @@ export const Input = ({
     multiline = false,
     numberOfLines = 1,
     style,
+    ...restProps
 }) => {
     return (
         <View style={styles.container}>
@@ -37,6 +38,7 @@ export const Input = ({
                 editable={editable}
                 multiline={multiline}
                 numberOfLines={numberOfLines}
+                {...restProps}
             />
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
         </View>
