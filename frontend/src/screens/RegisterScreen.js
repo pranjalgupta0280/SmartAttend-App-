@@ -14,6 +14,7 @@ import { Input } from "../components/Input.js";
 import { Button } from "../components/Button.js";
 import { COLORS, SPACING, RADIUS } from "../constants/theme.js";
 import { SmartAttendLogo } from "../components/SmartAttendLogo.js";
+import { isValidEmail } from "../utils/validation.js";
 
 export const RegisterScreen = ({ onNavigateToLogin }) => {
     const { register } = useAuth();
@@ -34,6 +35,11 @@ export const RegisterScreen = ({ onNavigateToLogin }) => {
 
         if (!email.trim()) {
             setError("Email address is required");
+            return;
+        }
+
+        if (!isValidEmail(email)) {
+            setError("Please enter a valid email address (e.g. student@school.com)");
             return;
         }
 
@@ -95,10 +101,10 @@ export const RegisterScreen = ({ onNavigateToLogin }) => {
                 keyboardShouldPersistTaps="handled"
             >
                 <View style={styles.headerContainer}>
-                    <SmartAttendLogo width={110} height={95} showWordmark={false} style={{ alignSelf: "center", marginBottom: SPACING.xs }} />
-                    <Text style={styles.brandTitle}>Create Account</Text>
+                    <SmartAttendLogo width={90} height={85} showWordmark={false} style={{ marginBottom: SPACING.xs }} />
+                    <Text style={styles.brandTitle}>SmartAttend</Text>
                     <Text style={styles.brandSubtitle}>
-                        Join SmartAttend with Biometric Thumb Verification
+                        Create Account • Biometric Verification
                     </Text>
                 </View>
 

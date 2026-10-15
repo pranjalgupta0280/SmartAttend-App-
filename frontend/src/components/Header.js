@@ -60,8 +60,9 @@ const styles = StyleSheet.create({
         minHeight: 56,
     },
     left: {
-        width: 60,
+        width: 76,
         alignItems: "flex-start",
+        justifyContent: "center",
     },
     backButton: {
         paddingVertical: 4,
@@ -85,14 +86,17 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "700",
         color: COLORS.textPrimary,
+        textAlign: "center",
     },
     subtitle: {
         fontSize: 12,
         color: COLORS.textSecondary,
         marginTop: 1,
+        textAlign: "center",
     },
     right: {
-        width: 60,
+        width: 76,
         alignItems: "flex-end",
+        justifyContent: "center",
     },
 });

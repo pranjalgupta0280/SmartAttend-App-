@@ -16,6 +16,7 @@ import { Button } from "../components/Button.js";
 import { Input } from "../components/Input.js";
 import { Loading, EmptyState } from "../components/Loading.js";
 import { COLORS, SPACING, RADIUS } from "../constants/theme.js";
+import { isValidEmail } from "../utils/validation.js";
 
 export const StudentsScreen = ({ classItem, onBack }) => {
     const { token } = useAuth();
@@ -62,6 +63,11 @@ export const StudentsScreen = ({ classItem, onBack }) => {
 
         if (!email.trim()) {
             setModalError("Student registered email is required");
+            return;
+        }
+
+        if (!isValidEmail(email)) {
+            setModalError("Please enter a valid email address");
             return;
         }
 

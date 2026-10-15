@@ -15,6 +15,7 @@ import { Button } from "../components/Button.js";
 import { COLORS, SPACING, RADIUS } from "../constants/theme.js";
 import { getApiBaseUrl, setApiBaseUrl, KNOWN_SERVERS } from "../config/api.js";
 import { SmartAttendLogo } from "../components/SmartAttendLogo.js";
+import { isValidEmail } from "../utils/validation.js";
 
 export const LoginScreen = ({ onNavigateToRegister }) => {
     const { login } = useAuth();
@@ -31,6 +32,11 @@ export const LoginScreen = ({ onNavigateToRegister }) => {
         setError("");
         if (!email.trim() || !password) {
             setError("Email and password are required");
+            return;
+        }
+
+        if (!isValidEmail(email)) {
+            setError("Please enter a valid email address (e.g. name@domain.com)");
             return;
         }
 
@@ -60,7 +66,11 @@ export const LoginScreen = ({ onNavigateToRegister }) => {
                 keyboardShouldPersistTaps="handled"
             >
                 <View style={styles.headerContainer}>
-                    <SmartAttendLogo width={200} height={170} />
+                    <SmartAttendLogo width={90} height={85} showWordmark={false} style={{ marginBottom: SPACING.xs }} />
+                    <Text style={styles.brandTitle}>SmartAttend</Text>
+                    <Text style={styles.brandSubtitle}>
+                        Fast, Geofenced Classroom Attendance
+                    </Text>
                 </View>
 
                 <View style={styles.card}>

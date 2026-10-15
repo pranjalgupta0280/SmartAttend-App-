@@ -12,7 +12,8 @@ import {
     getClassStudents,
     addCoTeacher,
     getClassTeachers,
-    removeCoTeacher
+    removeCoTeacher,
+    updateCoTeacherPermissions
 } from "../controllers/membership.controller.js";
 import {
     createSession,
@@ -40,6 +41,7 @@ router.post("/:classId/students", addStudent);
 router.get("/:classId/students", getClassStudents);
 router.post("/:classId/teachers", addCoTeacher);
 router.get("/:classId/teachers", getClassTeachers);
+router.patch("/:classId/teachers/:userId/permissions", updateCoTeacherPermissions);
 router.delete("/:classId/teachers/:userId", removeCoTeacher);
 
 

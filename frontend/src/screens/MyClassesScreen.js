@@ -156,8 +156,8 @@ export const MyClassesScreen = ({ onSelectClass }) => {
                 title="SmartAttend"
                 subtitle={user?.name || "My Classes"}
                 rightAction={
-                    <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
-                        <Text style={styles.logoutText}>Logout</Text>
+                    <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn} activeOpacity={0.7}>
+                        <Text style={styles.logoutText} numberOfLines={1}>Logout</Text>
                     </TouchableOpacity>
                 }
             />
@@ -350,13 +350,19 @@ const styles = StyleSheet.create({
         color: COLORS.primary,
     },
     logoutBtn: {
-        paddingVertical: 4,
-        paddingHorizontal: 8,
+        paddingVertical: 5,
+        paddingHorizontal: 10,
+        backgroundColor: COLORS.dangerLight,
+        borderRadius: RADIUS.full,
+        alignItems: "center",
+        justifyContent: "center",
     },
     logoutText: {
-        fontSize: 13,
-        fontWeight: "600",
+        fontSize: 12,
+        fontWeight: "700",
         color: COLORS.danger,
+        flexShrink: 0,
+        includeFontPadding: false,
     },
     errorBox: {
         backgroundColor: COLORS.dangerLight,

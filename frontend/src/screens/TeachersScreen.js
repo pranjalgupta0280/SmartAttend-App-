@@ -18,6 +18,7 @@ import { Button } from "../components/Button.js";
 import { Input } from "../components/Input.js";
 import { Loading, EmptyState } from "../components/Loading.js";
 import { COLORS, SPACING, RADIUS } from "../constants/theme.js";
+import { isValidEmail } from "../utils/validation.js";
 
 const ALL_PERMISSIONS = [
     { key: "MANAGE_MEMBERS", label: "Manage Members" },
@@ -36,6 +37,7 @@ export const TeachersScreen = ({ classItem, onBack }) => {
 
     // Modal state
     const [modalVisible, setModalVisible] = useState(false);
+    const [editingTeacher, setEditingTeacher] = useState(null);
     const [email, setEmail] = useState("");
     const [selectedPermissions, setSelectedPermissions] = useState([
         "MANAGE_MEMBERS",
@@ -78,10 +80,35 @@ export const TeachersScreen = ({ classItem, onBack }) => {
         }
     };
 
+    const openAddTeacherModal = () => {
+        setEditingTeacher(null);
+        setEmail("");
+        setSelectedPermissions([
+            "MANAGE_MEMBERS",
+            "MANAGE_SCHEDULE",
+            "MANAGE_ATTENDANCE",
+        ]);
+        setModalError("");
+        setModalVisible(true);
+    };
+
+    const handleEditPermissions = (teacher) => {
+        setEditingTeacher(teacher);
+        setEmail(teacher.email || "");
+        setSelectedPermissions(teacher.permissions || []);
+        setModalError("");
+        setModalVisible(true);
+    };
+
     const handleAssignTeacher = async () => {
         setModalError("");
         if (!email.trim()) {
             setModalError("Teacher email is required");
+            return;
+        }
+
+        if (!isValidEmail(email)) {
+            setModalError("Please enter a valid email address");
             return;
         }
 
@@ -92,20 +119,34 @@ export const TeachersScreen = ({ classItem, onBack }) => {
 
         setAssigning(true);
         try {
-            await apiRequest(`/api/classes/${classItem._id}/teachers`, {
-                method: "POST",
-                token,
-                body: {
-                    email: email.trim().toLowerCase(),
-                    permissions: selectedPermissions,
-                },
-            });
+            if (editingTeacher) {
+                await apiRequest(
+                    `/api/classes/${classItem._id}/teachers/${editingTeacher.id}/permissions`,
+                    {
+                        method: "PATCH",
+                        token,
+                        body: {
+                            permissions: selectedPermissions,
+                        },
+                    }
+                );
+            } else {
+                await apiRequest(`/api/classes/${classItem._id}/teachers`, {
+                    method: "POST",
+                    token,
+                    body: {
+                        email: email.trim().toLowerCase(),
+                        permissions: selectedPermissions,
+                    },
+                });
+            }
 
             setEmail("");
+            setEditingTeacher(null);
             setModalVisible(false);
             fetchTeachers();
         } catch (err) {
-            setModalError(err.message || "Failed to assign co-teacher");
+            setModalError(err.message || "Failed to save permissions");
         } finally {
             setAssigning(false);
         }
@@ -167,12 +208,20 @@ export const TeachersScreen = ({ classItem, onBack }) => {
                 ) : null}
 
                 {canRemove ? (
-                    <TouchableOpacity
-                        onPress={() => handleRemoveTeacher(item)}
-                        style={styles.removeBtn}
-                    >
-                        <Text style={styles.removeText}>Remove Co-Teacher</Text>
-                    </TouchableOpacity>
+                    <View style={styles.cardActionsRow}>
+                        <TouchableOpacity
+                            onPress={() => handleEditPermissions(item)}
+                            style={styles.editBtn}
+                        >
+                            <Text style={styles.editText}>Edit Permissions</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => handleRemoveTeacher(item)}
+                            style={styles.removeBtn}
+                        >
+                            <Text style={styles.removeText}>Remove</Text>
+                        </TouchableOpacity>
+                    </View>
                 ) : null}
             </Card>
         );
@@ -195,10 +244,7 @@ export const TeachersScreen = ({ classItem, onBack }) => {
                         <Button
                             title="+ Assign Co-Teacher"
                             size="sm"
-                            onPress={() => {
-                                setModalError("");
-                                setModalVisible(true);
-                            }}
+                            onPress={openAddTeacherModal}
                         />
                     ) : null}
                 </View>
@@ -243,7 +289,7 @@ export const TeachersScreen = ({ classItem, onBack }) => {
                 )}
             </View>
 
-            {/* Assign Co-Teacher Modal */}
+            {/* Assign / Edit Co-Teacher Modal */}
             <Modal
                 visible={modalVisible}
                 animationType="slide"
@@ -253,7 +299,9 @@ export const TeachersScreen = ({ classItem, onBack }) => {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalCard}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Assign Co-Teacher</Text>
+                            <Text style={styles.modalTitle}>
+                                {editingTeacher ? "Edit Permissions" : "Assign Co-Teacher"}
+                            </Text>
                             <TouchableOpacity onPress={() => setModalVisible(false)}>
                                 <Text style={styles.closeBtn}>✕</Text>
                             </TouchableOpacity>
@@ -272,6 +320,7 @@ export const TeachersScreen = ({ classItem, onBack }) => {
                             placeholder="colleague@example.com"
                             keyboardType="email-address"
                             autoCapitalize="none"
+                            editable={!editingTeacher}
                         />
 
                         <Text style={styles.permLabel}>Permissions:</Text>
@@ -286,8 +335,8 @@ export const TeachersScreen = ({ classItem, onBack }) => {
                                 >
                                     <View
                                         style={[
-                                            styles.checkbox,
-                                            isChecked && styles.checkboxActive,
+                                             styles.checkbox,
+                                             isChecked && styles.checkboxActive,
                                         ]}
                                     >
                                         {isChecked ? (
@@ -307,7 +356,7 @@ export const TeachersScreen = ({ classItem, onBack }) => {
                                 style={styles.modalBtn}
                             />
                             <Button
-                                title="Assign"
+                                title={editingTeacher ? "Save Changes" : "Assign"}
                                 onPress={handleAssignTeacher}
                                 loading={assigning}
                                 style={styles.modalBtn}
@@ -382,9 +431,25 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         color: COLORS.textSecondary,
     },
-    removeBtn: {
+    cardActionsRow: {
+        flexDirection: "row",
+        justifyContent: "flex-end",
+        alignItems: "center",
+        gap: SPACING.md,
         marginTop: SPACING.md,
-        alignSelf: "flex-end",
+    },
+    editBtn: {
+        paddingVertical: 4,
+        paddingHorizontal: SPACING.xs,
+    },
+    editText: {
+        color: COLORS.primary,
+        fontSize: 13,
+        fontWeight: "600",
+    },
+    removeBtn: {
+        paddingVertical: 4,
+        paddingHorizontal: SPACING.xs,
     },
     removeText: {
         color: COLORS.danger,

@@ -2,6 +2,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import { isValidEmail } from "../utils/validation.js";
 
 const createToken = (userId) => {
     if (!process.env.JWT_SECRET) {
@@ -28,14 +29,13 @@ export const register = async (req, res) => {
 
         if (
             typeof name !== "string" ||
-            typeof email !== "string" ||
+            !isValidEmail(email) ||
             typeof password !== "string" ||
             !name.trim() ||
-            !email.trim() ||
             password.length < 8
         ) {
             return res.status(400).json({
-                message: "Name, valid email, and password of at least 8 characters are required"
+                message: "Name, a valid email address (e.g. name@domain.com), and password of at least 8 characters are required"
             });
         }
 
@@ -93,13 +93,12 @@ export const login = async (req, res) => {
         const { email, password } = req.body;
 
         if (
-            typeof email !== "string" ||
+            !isValidEmail(email) ||
             typeof password !== "string" ||
-            !email.trim() ||
             !password
         ) {
             return res.status(400).json({
-                message: "Email and password are required"
+                message: "A valid email format (e.g. name@domain.com) and password are required"
             });
         }
 

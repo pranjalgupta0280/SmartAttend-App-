@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { StatusBar, StyleSheet } from "react-native";
+import React, { useState, useEffect } from "react";
+import { StatusBar, StyleSheet, BackHandler } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../context/AuthContext.js";
 import { Loading } from "../components/Loading.js";
@@ -40,6 +40,31 @@ export const AppNavigator = () => {
     const resetTo = (screen, params = {}) => {
         setNavStack([{ screen, params }]);
     };
+
+    // Handle Android hardware/swipe-from-edge back action
+    useEffect(() => {
+        const onHardwareBack = () => {
+            if (!token) {
+                if (authScreen === "register") {
+                    setAuthScreen("login");
+                    return true;
+                }
+                return false;
+            }
+
+            if (navStack.length > 1) {
+                pop();
+                return true; // Handled back navigation; do not exit app
+            }
+            return false; // Exit app only at root
+        };
+
+        const backHandler = BackHandler.addEventListener(
+            "hardwareBackPress",
+            onHardwareBack
+        );
+        return () => backHandler.remove();
+    }, [token, authScreen, navStack.length]);
 
     if (isLoading) {
         return (

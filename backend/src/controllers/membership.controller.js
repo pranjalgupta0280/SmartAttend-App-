@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import User from "../models/User.js";
 import Class from "../models/Class.js";
 import ClassMembership from "../models/ClassMembership.js";
+import { isValidEmail } from "../utils/validation.js";
 
 
 // POST /api/classes/:classId/students
@@ -13,11 +14,10 @@ export const addStudent = async (req, res) => {
 
         if (
             !mongoose.isValidObjectId(classId) ||
-            typeof email !== "string" ||
-            !email.trim()
+            !isValidEmail(email)
         ) {
             return res.status(400).json({
-                message: "A valid class ID and student email are required"
+                message: "A valid class ID and valid student email format (e.g. student@school.com) are required"
             });
         }
 
@@ -183,11 +183,10 @@ export const addCoTeacher = async (req, res) => {
 
         if (
             !mongoose.isValidObjectId(classId) ||
-            typeof email !== "string" ||
-            !email.trim()
+            !isValidEmail(email)
         ) {
             return res.status(400).json({
-                message: "A valid class ID and teacher email are required"
+                message: "A valid class ID and valid teacher email format (e.g. teacher@school.com) are required"
             });
         }
 
@@ -260,8 +259,25 @@ export const addCoTeacher = async (req, res) => {
         });
 
         if (membership?.status === "ACTIVE") {
+            if (membership.role === "TEACHER") {
+                // Update permissions for active co-teacher
+                membership.permissions = selectedPermissions;
+                membership.assignedBy = req.user.id;
+                await membership.save();
+
+                return res.status(200).json({
+                    message: "Co-teacher permissions updated successfully",
+                    teacher: {
+                        id: teacher._id,
+                        name: teacher.name,
+                        email: teacher.email
+                    },
+                    permissions: membership.permissions
+                });
+            }
+
             return res.status(409).json({
-                message: "This user already has an active membership in this class"
+                message: "This user already has an active student membership in this class"
             });
         }
 
@@ -433,6 +449,81 @@ export const removeCoTeacher = async (req, res) => {
 
         return res.status(500).json({
             message: "Failed to remove co-teacher"
+        });
+    }
+};
+
+// PATCH /api/classes/:classId/teachers/:userId/permissions
+export const updateCoTeacherPermissions = async (req, res) => {
+    try {
+        const { classId, userId } = req.params;
+        const { permissions } = req.body;
+
+        if (
+            !mongoose.isValidObjectId(classId) ||
+            !mongoose.isValidObjectId(userId)
+        ) {
+            return res.status(400).json({
+                message: "Invalid class ID or teacher user ID"
+            });
+        }
+
+        const classDoc = await Class.findById(classId);
+        if (!classDoc || !classDoc.isActive) {
+            return res.status(404).json({ message: "Class not found" });
+        }
+
+        if (classDoc.ownerTeacherId.toString() !== req.user.id) {
+            return res.status(403).json({
+                message: "Only the class owner can change co-teacher permissions"
+            });
+        }
+
+        if (userId === classDoc.ownerTeacherId.toString()) {
+            return res.status(400).json({
+                message: "Cannot edit owner permissions"
+            });
+        }
+
+        const selectedPermissions =
+            permissions === undefined ? CO_TEACHER_PERMISSIONS : permissions;
+
+        if (
+            !Array.isArray(selectedPermissions) ||
+            !selectedPermissions.every((p) => CO_TEACHER_PERMISSIONS.includes(p)) ||
+            new Set(selectedPermissions).size !== selectedPermissions.length
+        ) {
+            return res.status(400).json({
+                message: "Invalid co-teacher permissions"
+            });
+        }
+
+        const membership = await ClassMembership.findOne({
+            userId,
+            classId,
+            role: "TEACHER",
+            status: "ACTIVE"
+        });
+
+        if (!membership) {
+            return res.status(404).json({
+                message: "Active co-teacher not found in this class"
+            });
+        }
+
+        membership.permissions = selectedPermissions;
+        membership.assignedBy = req.user.id;
+        await membership.save();
+
+        return res.status(200).json({
+            message: "Co-teacher permissions updated successfully",
+            permissions: membership.permissions
+        });
+    } catch (error) {
+        console.error("Update co-teacher permissions error:", error.message);
+
+        return res.status(500).json({
+            message: "Failed to update co-teacher permissions"
         });
     }
 };
