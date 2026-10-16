@@ -20,23 +20,24 @@
       "backgroundColor": "#FAF7F4"
     },
     "android": {
+      "package": "com.smartattend.app",
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "backgroundColor": "#FAF7F4",
-        "foregroundImage": "./assets/smartattend-logo.svg",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/smartattend-logo.svg"
+        "foregroundImage": "./assets/Verified Location Attendance Icon.png",
+        "backgroundImage": "./assets/android-icon-background.png"
       },
       "permissions": [
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT",
         "android.permission.CAMERA",
         "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_COARSE_LOCATION"
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
-      "favicon": "./assets/smartattend-logo.svg"
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-secure-store",
@@ -59,6 +60,11 @@
           "locationAlwaysAndWhenInUsePermission": "SmartAttend requires location access to verify your presence inside the classroom geofence."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "59093263-94e2-4364-9371-4f60d39008d2"
+      }
+    }
   }
 }
