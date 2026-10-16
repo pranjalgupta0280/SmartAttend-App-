@@ -1,12 +1,14 @@
 // Configured local LAN IPs:
-// 1. 10.5.52.192 (Currently on PC)
-// 2. 192.168.29.57 (Home / Previous IP)
+// 1. 192.168.29.61 (Current Wi-Fi IP on PC)
+// 2. 10.5.52.192 (Campus / Previous IP)
+// 3. 192.168.29.57 (Home / Previous IP)
 export const KNOWN_SERVERS = [
+    "http://192.168.29.61:5000",
     "http://10.5.52.192:5000",
     "http://192.168.29.57:5000",
 ];
 
-export const DEFAULT_API_BASE_URL = "http://10.5.52.192:5000";
+export const DEFAULT_API_BASE_URL = "http://192.168.29.61:5000";
 
 let currentBaseUrl = DEFAULT_API_BASE_URL;
 

@@ -348,17 +348,75 @@ export const getSessionAttendance = async (req, res) => {
             ])
         );
 
+        const now = new Date();
+        const isWindowClosed =
+            session.status === "COMPLETED" ||
+            now > new Date(session.attendanceClosesAt);
+
+        // If window has passed but session was still marked SCHEDULED, auto-complete it
+        if (session.status === "SCHEDULED" && isWindowClosed) {
+            session.status = "COMPLETED";
+            await session.save();
+        }
+
+        // If attendance window has closed, ensure missing records are persisted as ABSENT via SYSTEM
+        if (isWindowClosed && session.status !== "HOLIDAY" && session.status !== "CANCELLED") {
+            const missingStudentIds = memberships
+                .filter(item => item.userId && !recordByStudent.has(item.userId._id.toString()))
+                .map(item => item.userId._id);
+
+            if (missingStudentIds.length > 0) {
+                const markTime = session.attendanceClosesAt || now;
+                await AttendanceRecord.bulkWrite(
+                    missingStudentIds.map(studentId => ({
+                        updateOne: {
+                            filter: {
+                                sessionId: session._id,
+                                studentId
+                            },
+                            update: {
+                                $setOnInsert: {
+                                    classId: session.classId,
+                                    sessionId: session._id,
+                                    studentId,
+                                    status: "ABSENT",
+                                    method: "SYSTEM",
+                                    markedAt: markTime
+                                }
+                            },
+                            upsert: true
+                        }
+                    })),
+                    { ordered: false }
+                );
+
+                // Reload records so recordByStudent contains the new entries
+                const updatedRecords = await AttendanceRecord.find({
+                    classId,
+                    sessionId
+                });
+                updatedRecords.forEach(rec => {
+                    recordByStudent.set(rec.studentId.toString(), rec);
+                });
+            }
+        }
+
         const students = memberships
             .filter(item => item.userId)
             .map(item => {
                 const student = item.userId;
                 const record = recordByStudent.get(student._id.toString());
 
-                let status = record?.status || "PENDING";
+                let status = record?.status;
 
-                if (session.status === "HOLIDAY" ||
-                    session.status === "CANCELLED") {
+                if (session.status === "HOLIDAY" || session.status === "CANCELLED") {
                     status = session.status;
+                } else if (status === "PRESENT") {
+                    status = "PRESENT";
+                } else if (isWindowClosed) {
+                    status = "ABSENT";
+                } else {
+                    status = "PENDING";
                 }
 
                 return {
@@ -366,8 +424,8 @@ export const getSessionAttendance = async (req, res) => {
                     name: student.name,
                     email: student.email,
                     status,
-                    markedAt: record?.markedAt || null,
-                    method: record?.method || null
+                    markedAt: record?.markedAt || (isWindowClosed ? (session.attendanceClosesAt || now) : null),
+                    method: record?.method || (isWindowClosed ? "SYSTEM" : null)
                 };
             });
 
@@ -428,8 +486,13 @@ export const getMyClassAttendance = async (req, res) => {
             ])
         );
 
+        const now = new Date();
+
         const history = sessions.map(session => {
             const record = recordBySession.get(session._id.toString());
+            const isWindowClosed =
+                session.status === "COMPLETED" ||
+                now > new Date(session.attendanceClosesAt);
 
             let status;
 
@@ -437,12 +500,10 @@ export const getMyClassAttendance = async (req, res) => {
                 status = "HOLIDAY";
             } else if (session.status === "CANCELLED") {
                 status = "CANCELLED";
-            } else if (session.status === "COMPLETED") {
-                // A completed session with no PRESENT record counts as absent.
-                status =
-                    record?.status === "PRESENT"
-                        ? "PRESENT"
-                        : "ABSENT";
+            } else if (record?.status === "PRESENT") {
+                status = "PRESENT";
+            } else if (isWindowClosed) {
+                status = "ABSENT";
             } else {
                 status = record?.status || "PENDING";
             }
@@ -453,15 +514,15 @@ export const getMyClassAttendance = async (req, res) => {
                 date: session.startsAt,
                 startsAt: session.startsAt,
                 endsAt: session.endsAt,
-                sessionStatus: session.status,
+                sessionStatus: isWindowClosed && session.status === "SCHEDULED" ? "COMPLETED" : session.status,
                 attendanceStatus: status,
-                markedAt: record?.markedAt || null
+                markedAt: record?.markedAt || (isWindowClosed ? (session.attendanceClosesAt || session.endsAt) : null)
             };
         });
 
-        // Only finalized sessions count toward the percentage.
+        // Finalized sessions or closed windows count toward percentage
         const eligibleSessions = sessions.filter(
-            session => session.status === "COMPLETED"
+            session => session.status === "COMPLETED" || now > new Date(session.attendanceClosesAt)
         );
 
         const presentCount = eligibleSessions.filter(session => {
